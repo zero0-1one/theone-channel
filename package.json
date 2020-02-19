@@ -1,6 +1,6 @@
 {
   "name": "zo-theone-channel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "db channel for theone framework",
   "main": "index.js",
   "scripts": {
