@@ -1,0 +1,38 @@
+{
+  "name": "zo-theone-channel",
+  "version": "1.0.0",
+  "description": "db channel for theone framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --timeout=10000 --slow=5000 test/test.js"
+  },
+  "keywords": [
+    "theone",
+    "server",
+    "app",
+    "koa",
+    "framework",
+    "channel"
+  ],
+  "engines": {
+    "node": ">= 10.0.0"
+  },
+  "dependencies": {
+    "crc": "^3.8.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^7.0.1",
+    "zo-mocha-ext": "^1.0.3",
+    "zo-theone": "^1.2.4"
+  },
+  "author": "zero0-1one",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zero0-1one/theone-channel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zero0-1one/theone-channel/issues"
+  }
+}
