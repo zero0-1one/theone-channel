@@ -9,7 +9,7 @@ let instances = {}
 class DbChannel {
   constructor(prefix) {
     if (prefix && !prefix.endsWith('_')) prefix += '_'
-    this.tableName = prefix + '_channel'
+    this.tableName = prefix + 'channel'
     this.selectSql = `SELECT c_uId FROM ${this.tableName} WHERE c_uId = ? FOR UPDATE`
     this.replaceSql = `REPLACE INTO ${this.tableName}(c_uId) VALUES(?)`
   }
