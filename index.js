@@ -10,8 +10,13 @@ class DbChannel {
   constructor(prefix) {
     if (prefix && !prefix.endsWith('_')) prefix += '_'
     this.tableName = prefix + 'channel'
+    this.nowaitTableName = prefix + 'channel_nowait'
+
     this.selectSql = `SELECT c_uId FROM ${this.tableName} WHERE c_uId = ? FOR UPDATE`
     this.replaceSql = `REPLACE INTO ${this.tableName}(c_uId) VALUES(?)`
+
+    this.selectSqlNowait = `SELECT cn_sName FROM ${this.nowaitTableName} WHERE {cn_sName = ?} OR... FOR UPDATE NOWAIT`
+    this.replaceSqlNowait = `REPLACE INTO ${this.nowaitTableName}(cn_sName) VALUES {(?)},...`
   }
 
   async init(options, theoneDb) {
@@ -21,13 +26,20 @@ class DbChannel {
         `CREATE TABLE IF NOT EXISTS ${this.tableName} (
           c_uId int unsigned NOT NULL,
           PRIMARY KEY (c_uId)
-        ) ENGINE=InnoDB;`
+        ) ENGINE=InnoDB COMMENT='Created by zo-theone-channel';`
       )
-      await db.query(`REPLACE INTO ${this.tableName} (c_uId) VALUES(1),(2)`) //防止单行记录锁表,先支持插入2条记录
+      await db.query(
+        `CREATE TABLE IF NOT EXISTS ${this.nowaitTableName} (
+          cn_sName varchar(255) NOT NULL,
+          PRIMARY KEY (cn_sName)
+        ) ENGINE=InnoDB COMMENT='Created by zo-theone-channel';`
+      )
+      await db.query(`REPLACE INTO ${this.tableName} (c_uId) VALUES {(?)},...`, [[...Array(20).keys()]]) //预插入一些记录, 防止记录较少时候锁表
     }, options)
   }
 
   async lock(db, channels) {
+    if (!Array.isArray(channels)) channels = [channels]
     channels = channels.map(v => crc.crc32(v.toString()))
     channels = [...new Set(channels)]
     channels.sort((a, b) => a - b)
@@ -37,6 +49,23 @@ class DbChannel {
         await db.execute(this.replaceSql, [c])
       }
     }
+  }
+
+  //nowait 使用精确锁(原字符串)   而 lock 为了效率和节约空间使用的是 crc32 整数
+  async lockNowait(db, channels) {
+    if (!Array.isArray(channels)) channels = [channels]
+    if (channels.length == 0) return
+    channels = [...new Set(channels)]
+    try {
+      var rt = await db.execute(this.selectSqlNowait, [channels])
+    } catch (e) {
+      if (e.message.toLocaleLowerCase().includes('nowait is set')) return false   //因为 NOWAIT 返回false, 否则抛异常
+      throw e
+    }
+    if (rt.length < channels.length) {//此时会等待 没有 nowait
+      await db.execute(this.replaceSqlNowait, [channels])
+    }
+    return true
   }
 }
 
