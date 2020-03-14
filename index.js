@@ -39,6 +39,7 @@ class DbChannel {
   }
 
   async lock(db, channels) {
+    if (!db.isBegin()) throw new Error('必须在 beginTransaction 后调用 lock')
     if (!Array.isArray(channels)) channels = [channels]
     channels = channels.map(v => crc.crc32(v.toString()))
     channels = [...new Set(channels)]
@@ -53,6 +54,8 @@ class DbChannel {
 
   //nowait 使用精确锁(原字符串)   而 lock 为了效率和节约空间使用的是 crc32 整数
   async lockNowait(db, channels) {
+    if (!db.isBegin()) throw new Error('必须在 beginTransaction 后调用 lock')
+
     if (!Array.isArray(channels)) channels = [channels]
     if (channels.length == 0) return
     channels = [...new Set(channels)]
