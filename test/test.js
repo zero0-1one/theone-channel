@@ -34,7 +34,7 @@ let config = [
 describe('db', function () {
 
   let channelInst = null
-  its_par(N, 'lock 相同 channel 实例', async function () {
+  its_par(N, 'lock crc32 相同 channel 实例', async function () {
     let cfg = config[this.iteration]
     await this.beforeAll(async () => {
       data = []
@@ -55,7 +55,7 @@ describe('db', function () {
 
 
 
-  its_par(N, 'lock 不同 channel 实例', async function () {
+  its_par(N, 'lock crc32 不同 channel 实例', async function () {
     let cfg = config[this.iteration]
     await this.beforeAll(async () => {
       data = []
@@ -74,8 +74,75 @@ describe('db', function () {
     })
   })
 
+  its_par(N, 'lock string 相同 channel 实例', async function () {
+    let cfg = config[this.iteration]
+    await this.beforeAll(async () => {
+      data = []
+      channelInst = await channel.init(options, 'same', Db)
+    })
+    await Db.transaction(async (db) => {
+      await sleep(cfg.timeBefore)
+      await channelInst.lock(db, cfg.channel, 'string')
 
-  it('lockNowait 失败', async function () {
+      data.push(this.iteration)
+      await sleep(cfg.timeAfter)
+    }, options)
+
+    await this.afterAll(async () => {
+      assert.deepEqual(data, [0, 2, 1, 3])
+    })
+  })
+
+
+
+  its_par(N, 'lock string 不同 channel 实例', async function () {
+    let cfg = config[this.iteration]
+    await this.beforeAll(async () => {
+      data = []
+    })
+    let inst = await channel.init(options, 'diff' + this.iteration, Db)
+
+    await Db.transaction(async (db) => {
+      await sleep(cfg.timeBefore)
+      await inst.lock(db, cfg.channel, 'string')
+
+      data.push(this.iteration)
+      await sleep(cfg.timeAfter)
+    }, options)
+    await this.afterAll(async () => {
+      assert.deepEqual(data, [0, 1, 2, 3])
+    })
+  })
+
+
+  it('lockNowait crc32 失败', async function () {
+    let inst = await channel.init(options, 'test', Db)
+    await Db.transaction(async (db1) => {
+      await inst.lockNowait(db1, 'abc', 'crc32')
+
+      await Db.transaction(async (db2) => {
+        let rt = await inst.lockNowait(db2, 'abc', 'crc32')
+        assert.isFalse(rt)
+      }, options)
+
+    }, options)
+  })
+
+  it('lockNowait crc32 成功', async function () {
+    let inst = await channel.init(options, 'test', Db)
+    await Db.transaction(async (db1) => {
+      await inst.lockNowait(db1, 'abc', 'crc32')
+
+      await Db.transaction(async (db2) => {
+        let rt = await inst.lockNowait(db2, 'efg', 'crc32')
+        assert.isTrue(rt)
+      }, options)
+
+    }, options)
+  })
+
+
+  it('lockNowait string 失败', async function () {
     let inst = await channel.init(options, 'test', Db)
     await Db.transaction(async (db1) => {
       await inst.lockNowait(db1, 'abc')
@@ -88,7 +155,7 @@ describe('db', function () {
     }, options)
   })
 
-  it('lockNowait 成功', async function () {
+  it('lockNowait string 成功', async function () {
     let inst = await channel.init(options, 'test', Db)
     await Db.transaction(async (db1) => {
       await inst.lockNowait(db1, 'abc')
