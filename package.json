@@ -24,7 +24,7 @@
     "chai": "^4.2.0",
     "mocha": "^7.0.1",
     "zo-mocha-ext": "^1.0.3",
-    "zo-theone": "^1.4.1"
+    "zo-theone": "^1.8.2"
   },
   "author": "zero0-1one",
   "license": "MIT",
